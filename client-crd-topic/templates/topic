@@ -1,0 +1,26 @@
+{{- $values := .Values }}
+{{- range .Values.topic }}
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: {{ required "Le nom du topic. Le caractere _ dans le nom du topic n est pas autorise" .name }}
+  namespace: confluent
+  labels:
+    ttfe-app: {{ printf "%s" $values.client }}
+spec:
+  replicas: {{ required "Replicas definissent le facteur de replication pour un topic" .replicas }}
+  partitionCount: {{ required "PartitionCount d/finit le nombre de partitions" .partitionCount }}
+  {{ if .config }}
+  configs:
+    {{- toYaml .config | nindent 4 }}
+  {{- end }}
+  kafkaClusterRef:
+    name: broker
+  kafkaRest:
+    endpoint: https://broker.confluent.svc.cluster.local:8090
+    authentication:
+       type: bearer
+       bearer:
+         secretRef: {{ printf "kafkarest-%s-%s-pks-bearer" $values.env $values.zone }}
+---
+{{- end }}
